@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afinador de Guitarra Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Estilos personalizados para el mástil de guitarra */
+        .fretboard-container {
+            background: linear-gradient(180deg, #2a1a08 0%, #150d04 100%);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+        .fret-wire {
+            border-right: 3px solid #d1d5db;
+            box-shadow: 2px 0 3px rgba(0,0,0,0.5);
+        }
+        .string-line {
+            position: relative;
+            background: linear-gradient(180deg, #e5e7eb 0%, #9ca3af 50%, #4b5563 100%);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+        }
+        
+        /* Animación suave para la aguja del afinador */
+        .tuner-needle {
+            transition: transform 0.15s ease-out;
+            transform-origin: bottom center;
+        }
+        
+        /* Ocultar scrollbar secundaria */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
+
+    <header class="bg-indigo-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid font-bold text-2xl text-amber-400 fa-guitar"></i>
+                <h1 class="text-2xl font-bold tracking-wide">AfinadorPro <span class="text-xs text-indigo-300 font-normal">Online</span></h1>
+            </div>
+            <p class="text-xs sm:text-sm text-indigo-200 text-center sm:text-right">Afinación de guitarra precisa mediante micrófono o referencia de sonido</p>
+        </div>
+    </header>
+
+    <section class="bg-slate-900 py-6 border-b-4 border-amber-800 overflow-x-auto no-scrollbar shadow-inner">
+        <div class="max-w-7xl mx-auto px-4 min-w-[768px]">
+            <h2 class="text-amber-400 text-sm font-semibold mb-3 tracking-wider uppercase text-center sm:text-left">
+                <i class="fa-solid fa-layer-group mr-1"></i> Visualizador del Diapasón (Afinación Estándar E2-A2-D3-G3-B3-E4)
+            </h2>
+            <div id="fretboard" class="fretboard-container relative rounded-lg border-2 border-amber-900 p-2 overflow-hidden flex flex-col justify-between h-48 select-none">
+                <!-- Cuerdas y trastes se generan con JS -->
+            </div>
+            <div class="flex justify-between text-xs text-gray-400 mt-1 px-8 font-mono">
+                <span>Cejuela</span>
+                <span>Traste 1</span>
+                <span>Traste 2</span>
+                <span>Traste 3</span>
+                <span>Traste 4</span>
+                <span>Traste 5</span>
+                <span>Traste 6</span>
+                <span>Traste 7</span>
+                <span>Traste 8</span>
+                <span>Traste 9</span>
+                <span>Traste 10</span>
+                <span>Traste 11</span>
+                <span>Traste 12</span>
+            </div>
+        </div>
+    </section>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow grid grid-cols-1 lg:grid-cols-4 gap-8 w-full">
+        
+        <!-- BARRA LATERAL / MENÚ -->
+        <aside class="lg:col-span-1 space-y-6">
+            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 mb-3 pb-2 border-b border-gray-100 flex items-center gap-2">
+                    <i class="fa-solid fa-list text-indigo-600"></i> Menú
+                </h3>
+                <nav class="flex flex-col space-y-1 text-sm font-medium">
+                    <a href="#tuner-section" class="px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition">
+                        <i class="fa-solid fa-microphone mr-2"></i> Afinador por micrófono
+                    </a>
+                    <a href="#reference-sounds" class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                        <i class="fa-solid fa-volume-high mr-2"></i> Sonidos de las cuerdas
+                    </a>
+                    <a href="#how-to-tune" class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                        <i class="fa-solid fa-book-open mr-2"></i> Cómo afinar una guitarra
+                    </a>
+                    <a href="#frequency-info" class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                        <i class="fa-solid fa-clock mr-2"></i> Frecuencia de afinación
+                    </a>
+                    <a href="#alternate-tunings" class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                        <i class="fa-solid fa-sliders mr-2"></i> Afinaciones alternativas
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Caja con atajo de notas -->
+            <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-xl p-4 shadow-sm">
+                <h4 class="text-xs uppercase tracking-wider text-amber-400 font-bold mb-2">Notas Estándar</h4>
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                    <div class="p-2 bg-slate-800/80 rounded border border-slate-700">1 (E4): 329.63 Hz</div>
+                    <div class="p-2 bg-slate-800/80 rounded border border-slate-700">2 (B3): 246.94 Hz</div>
+                    <div class="p-2 bg-slate-800/80 rounded border border-slate-700">3 (G3): 196.00 Hz</div>
+                    <div class="p-2 bg-slate-800/80 rounded border border-slate-700">4 (D3): 146.83 Hz</div>
+                    <div class="p-2 bg-slate-800/80 rounded border border-slate-700">5 (A2): 110.00 Hz</div>
+                    <div class="p-2 bg-slate-800/80 rounded border border-slate-700">6 (E2): 82.41 Hz</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- SECCIÓN PRINCIPAL -->
+        <section class="lg:col-span-3 space-y-8">
+            
+            <div id="tuner-section" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col items-center">
+                <div class="text-center max-w-xl mb-4">
+                    <h2 class="text-2xl font-bold text-indigo-950 mb-1">Afinador de guitarra online</h2>
+                    <p class="text-sm text-gray-600">
+                        La forma más rápida y precisa de afinar tu guitarra. Usa el micrófono de tu dispositivo para detectar la frecuencia exacta de tus cuerdas.
+                    </p>
+                </div>
+
+                <!-- DIAL DEL AFINADOR -->
+                <div class="relative w-80 h-48 bg-slate-50 rounded-t-full border-t-4 border-x-4 border-slate-200 flex flex-col items-center justify-end overflow-hidden shadow-inner p-4 my-2">
+                    <!-- Arco de colores del dial -->
+                    <div class="absolute inset-4 rounded-t-full border-[18px] border-transparent border-t-amber-400/30 border-l-red-500/30 border-r-red-500/30 pointer-events-none"></div>
+                    <div class="absolute top-2 w-12 h-6 border-t-8 border-emerald-500 rounded-t-full pointer-events-none"></div>
+
+                    <!-- Indicadores de desviación -->
+                    <div class="absolute top-8 left-10 text-xs font-semibold text-red-500">-50¢</div>
+                    <div class="absolute top-4 text-xs font-bold text-emerald-600">AFINADO</div>
+                    <div class="absolute top-8 right-10 text-xs font-semibold text-red-500">+50¢</div>
+
+                    <!-- Aguja -->
+                    <div id="needle" class="tuner-needle absolute bottom-6 w-1 h-32 bg-slate-800 rounded-full" style="transform: rotate(0deg);">
+                        <div class="w-3 h-3 bg-red-600 rounded-full -ml-1 -mt-1 shadow"></div>
+                    </div>
+
+                    <!-- Centro de aguja -->
+                    <div class="w-8 h-8 bg-slate-800 rounded-full z-10 border-2 border-white shadow flex items-center justify-center">
+                        <div class="w-2 h-2 bg-amber-400 rounded-full"></div>
+                    </div>
+                </div>
+
+                <!-- DISPLAY DE NOTA Y FRECUENCIA -->
+                <div class="text-center my-4">
+                    <div id="note-display" class="text-5xl font-extrabold text-slate-800 tracking-wider font-mono">--</div>
+                    <div id="freq-display" class="text-sm text-gray-500 font-mono mt-1">0.00 Hz</div>
+                    <div id="status-text" class="text-xs font-semibold uppercase tracking-wider text-gray-400 mt-2">Micrófono inactivo</div>
+                </div>
+
+                <!-- BOTÓN DE ACTIVACIÓN -->
+                <button id="mic-btn" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold rounded-xl shadow-md transition-all flex items-center gap-2 transform hover:-translate-y-0.5">
+                    <i class="fa-solid fa-microphone"></i> Activar Micrófono
+                </button>
+            </div>
+
+            <div id="reference-sounds" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-volume-high text-indigo-600"></i> Sonidos de las cuerdas de la guitarra
+                </h3>
+                <p class="text-sm text-gray-600 mb-6">
+                    Haz clic en el botón de reproducción junto a cada cuerda para escuchar la nota exacta de referencia.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Cuerda 1 -->
+                    <div class="flex items-center justify-between p-3 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-gray-200 transition">
+                        <div class="flex items-center gap-3">
+                            <button onclick="playGuitarTone(329.63)" class="w-10 h-10 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center shadow transition active:scale-95">
+                                <i class="fa-solid fa-play ml-0.5"></i>
+                            </button>
+                            <div>
+                                <span class="font-bold text-gray-800">1ª cuerda</span>
+                                <span class="text-xs text-gray-500 block">E4 (Mi - más delgada)</span>
+                            </div>
+                        </div>
+                        <span class="font-mono text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded">329.63 Hz</span>
+                    </div>
+
+                    <!-- Cuerda 2 -->
+                    <div class="flex items-center justify-between p-3 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-gray-200 transition">
+                        <div class="flex items-center gap-3">
+                            <button onclick="playGuitarTone(246.94)" class="w-10 h-10 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center shadow transition active:scale-95">
+                                <i class="fa-solid fa-play ml-0.5"></i>
+                            </button>
+                            <div>
+                                <span class="font-bold text-gray-800">2ª cuerda</span>
+                                <span class="text-xs text-gray-500 block">B3 (Si)</span>
+                            </div>
+                        </div>
+                        <span class="font-mono text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded">246.94 Hz</span>
+                    </div>
+
+                    <!-- Cuerda 3 -->
+                    <div class="flex items-center justify-between p-3 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-gray-200 transition">
+                        <div class="flex items-center gap-3">
+                            <button onclick="playGuitarTone(196.00)" class="w-10 h-10 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center shadow transition active:scale-95">
+                                <i class="fa-solid fa-play ml-0.5"></i>
+                            </button>
+                            <div>
+                                <span class="font-bold text-gray-800">3ª cuerda</span>
+                                <span class="text-xs text-gray-500 block">G3 (Sol)</span>
+                            </div>
+                        </div>
+                        <span class="font-mono text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded">196.00 Hz</span>
+                    </div>
+
+                    <!-- Cuerda 4 -->
+                    <div class="flex items-center justify-between p-3 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-gray-200 transition">
+                        <div class="flex items-center gap-3">
+                            <button onclick="playGuitarTone(146.83)" class="w-10 h-10 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center shadow transition active:scale-95">
+                                <i class="fa-solid fa-play ml-0.5"></i>
+                            </button>
+                            <div>
+                                <span class="font-bold text-gray-800">4ª cuerda</span>
+                                <span class="text-xs text-gray-500 block">D3 (Re)</span>
+                            </div>
+                        </div>
+                        <span class="font-mono text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded">146.83 Hz</span>
+                    </div>
+
+                    <!-- Cuerda 5 -->
+                    <div class="flex items-center justify-between p-3 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-gray-200 transition">
+                        <div class="flex items-center gap-3">
+                            <button onclick="playGuitarTone(110.00)" class="w-10 h-10 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center shadow transition active:scale-95">
+                                <i class="fa-solid fa-play ml-0.5"></i>
+                            </button>
+                            <div>
+                                <span class="font-bold text-gray-800">5ª cuerda</span>
+                                <span class="text-xs text-gray-500 block">A2 (La)</span>
+                            </div>
+                        </div>
+                        <span class="font-mono text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded">110.00 Hz</span>
+                    </div>
+
+                    <!-- Cuerda 6 -->
+                    <div class="flex items-center justify-between p-3 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-gray-200 transition">
+                        <div class="flex items-center gap-3">
+                            <button onclick="playGuitarTone(82.41)" class="w-10 h-10 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center shadow transition active:scale-95">
+                                <i class="fa-solid fa-play ml-0.5"></i>
+                            </button>
+                            <div>
+                                <span class="font-bold text-gray-800">6ª cuerda</span>
+                                <span class="text-xs text-gray-500 block">E2 (Mi - más gruesa)</span>
+                            </div>
+                        </div>
+                        <span class="font-mono text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded">82.41 Hz</span>
+                    </div>
+                </div>
+            </div>
+
+            <article id="how-to-tune" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-4">
+                <h3 class="text-xl font-bold text-gray-800 border-b pb-2">Cómo afinar una guitarra</h3>
+                <p class="text-sm text-gray-700 leading-relaxed">
+                    Pulse el botón <strong class="text-indigo-600 font-semibold">"Activar Micrófono"</strong> arriba del afinador. Si el navegador le solicita permiso de acceso al micrófono, permita el acceso para que el afinador pueda capturar y analizar el sonido de su instrumento.
+                </p>
+                <p class="text-sm text-gray-700 leading-relaxed">
+                    Toque cualquier cuerda al aire. El afinador cromático identificará la nota más cercana y mostrará qué tan afinada se encuentra:
+                </p>
+                <ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">
+                    <li><strong>Si la aguja está hacia la izquierda (-):</strong> La cuerda está floja (nota grave). Debe apretar la clavija con cuidado.</li>
+                    <li><strong>Si la aguja está hacia la derecha (+):</strong> La cuerda está muy tensa (nota aguda). Debe aflojar la clavija.</li>
+                    <li><strong>Si la aguja está en el centro verde:</strong> ¡La cuerda está perfectamente afinada!</li>
+                </ul>
+            </article>
+
+            <article id="frequency-info" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-4">
+                <h3 class="text-xl font-bold text-gray-800 border-b pb-2">¿Con qué frecuencia hay que afinar la guitarra?</h3>
+                <p class="text-sm text-gray-700 leading-relaxed">
+                    La guitarra debe afinarse <strong>siempre antes de cada sesión de práctica o ensayo</strong>. Los cambios de temperatura, la humedad, la tensión constante de las cuerdas y el transporte causan fluctuaciones naturales en la madera y en la tensión de las clavijas.
+                </p>
+                <p class="text-sm text-gray-700 leading-relaxed">
+                    Si instalas cuerdas nuevas, ten en cuenta que estas tienden a estirarse frecuentemente durante los primeros días, por lo que requerirán afinaciones repetidas hasta asentarse por completo.
+                </p>
+            </article>
+
+            <article id="alternate-tunings" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-4">
+                <h3 class="text-xl font-bold text-gray-800 border-b pb-2">Afinaciones alternativas más comunes</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="p-3 bg-slate-50 rounded-lg border border-gray-200">
+                        <h4 class="font-bold text-indigo-900">Drop D (D-A-D-G-B-E)</h4>
+                        <p class="text-xs text-gray-600 mt-1">Baja únicamente la 6ª cuerda un tono (de E2 a D2). Ideal para acordes de quinta rápidos en rock y metal.</p>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-lg border border-gray-200">
+                        <h4 class="font-bold text-indigo-900">Medio tono abajo (Eb-Ab-Db-Gb-Bb-Eb)</h4>
+                        <p class="text-xs text-gray-600 mt-1">Todas las cuerdas se bajan un semitono. Reduce la tensión de las cuerdas y facilita el canto.</p>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-gray-400 py-6 border-t border-slate-800 text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4 space-y-2">
+            <p>© 2026 AfinadorPro - Herramienta interactiva para músicos.</p>
+            <p>Creado con Web Audio API para una detección de tono precisa en el navegador.</p>
+        </div>
+    </footer>
+
+    <script>
+        // CONFIGURACIÓN DE NOTAS MUSICALES (A4 = 440 Hz)
+        const NOTE_STRINGS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const GUITAR_STRINGS = [
+            { note: "E4", freq: 329.63, num: 1, text: "1ª (E4)" },
+            { note: "B3", freq: 246.94, num: 2, text: "2ª (B3)" },
+            { note: "G3", freq: 196.00, num: 3, text: "3ª (G3)" },
+            { note: "D3", freq: 146.83, num: 4, text: "4ª (D3)" },
+            { note: "A2", freq: 110.00, num: 5, text: "5ª (A2)" },
+            { note: "E2", freq: 82.41,  num: 6, text: "6ª (E2)" }
+        ];
+
+        // 1. GENERACIÓN DINÁMICA DEL MÁSTIL DE LA GUITARRA
+        function renderFretboard() {
+            const fretboard = document.getElementById('fretboard');
+            fretboard.innerHTML = '';
+
+            GUITAR_STRINGS.forEach((stringInfo, index) => {
+                const stringRow = document.createElement('div');
+                stringRow.className = 'flex items-center w-full h-6 relative my-0.5';
+
+                // Etiqueta de la cuerda a la izquierda
+                const label = document.createElement('div');
+                label.className = 'w-12 h-6 rounded bg-indigo-900 text-amber-300 font-bold text-xs flex items-center justify-center z-10 shadow border border-amber-500/40 cursor-pointer hover:bg-indigo-800';
+                label.innerText = stringInfo.note;
+                label.title = `Reproducir ${stringInfo.note}`;
+                label.onclick = () => playGuitarTone(stringInfo.freq);
+                stringRow.appendChild(label);
+
+                // Línea de la cuerda (el grosor varía según el calibre)
+                const lineContainer = document.createElement('div');
+                lineContainer.className = 'flex-grow flex items-center relative h-full';
+
+                const line = document.createElement('div');
+                const height = 1 + (index * 0.6); // 6ª cuerda más gruesa
+                line.className = 'string-line w-full rounded-full';
+                line.style.height = `${height}px`;
+
+                // Agregar trastes (12 trastes)
+                const fretsContainer = document.createElement('div');
+                fretsContainer.className = 'absolute inset-0 flex justify-between pointer-events-none';
+                
+                for (let i = 0; i < 12; i++) {
+                    const fret = document.createElement('div');
+                    fret.className = 'fret-wire flex-1 h-full';
+                    
+                    // Incrustaciones (marcas de posición en trastes 3, 5, 7, 9, 12)
+                    if (index === 2 && [2, 4, 6, 8].includes(i)) {
+                        const dot = document.createElement('div');
+                        dot.className = 'w-2 h-2 bg-amber-200/40 rounded-full mx-auto my-auto mt-2 shadow';
+                        fret.appendChild(dot);
+                    }
+                    if (index === 2 && i === 11) {
+                        const doubleDot = document.createElement('div');
+                        doubleDot.className = 'flex gap-1 justify-center mt-2';
+                        doubleDot.innerHTML = '<div class="w-1.5 h-1.5 bg-amber-200/50 rounded-full"></div><div class="w-1.5 h-1.5 bg-amber-200/50 rounded-full"></div>';
+                        fret.appendChild(doubleDot);
+                    }
+
+                    fretsContainer.appendChild(fret);
+                }
+
+                lineContainer.appendChild(line);
+                lineContainer.appendChild(fretsContainer);
+                stringRow.appendChild(lineContainer);
+
+                fretboard.appendChild(stringRow);
+            });
+        }
+
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Sintetizador con tono estilo cuerda pulsada (Armónicos + Envolvente)
+        function playGuitarTone(frequency) {
+            const ctx = getAudioContext();
+            const now = ctx.currentTime;
+
+            // Oscilador principal
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            // Oscilador armónico secundario para enriquecer el timbre
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(frequency, now);
+
+            osc2.type = 'sawtooth';
+            osc2.frequency.setValueAtTime(frequency * 2, now); // Octava alta
+
+            // Envolvente de volumen (ataque rápido y decaimiento gradual)
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.exponentialRampToValueAtTime(0.5, now + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
+
+            gain2.gain.setValueAtTime(0.001, now);
+            gain2.gain.exponentialRampToValueAtTime(0.1, now + 0.02);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+
+            // Filtro de paso bajo para suavizar el sonido metálico
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(frequency * 4, now);
+
+            osc.connect(gain);
+            osc2.connect(gain2);
+            gain.connect(filter);
+            gain2.connect(filter);
+            filter.connect(ctx.destination);
+
+            osc.start(now);
+            osc2.start(now);
+            osc.stop(now + 2.5);
+            osc2.stop(now + 2.5);
+        }
+
+        let isListening = false;
+        let mediaStream = null;
+        let analyser = null;
+        let animationId = null;
+
+        const micBtn = document.getElementById('mic-btn');
+        const needle = document.getElementById('needle');
+        const noteDisplay = document.getElementById('note-display');
+        const freqDisplay = document.getElementById('freq-display');
+        const statusText = document.getElementById('status-text');
+
+        micBtn.addEventListener('click', toggleMicrophone);
+
+        async function toggleMicrophone() {
+            if (isListening) {
+                stopMicrophone();
+            } else {
+                await startMicrophone();
+            }
+        }
+
+        async function startMicrophone() {
+            try {
+                const ctx = getAudioContext();
+                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                
+                const source = ctx.createMediaStreamSource(mediaStream);
+                analyser = ctx.createAnalyser();
+                analyser.fftSize = 2048;
+                source.connect(analyser);
+
+                isListening = true;
+                micBtn.innerHTML = '<i class="fa-solid fa-stop"></i> Detener Micrófono';
+                micBtn.classList.replace('bg-indigo-600', 'bg-red-600');
+                micBtn.classList.replace('hover:bg-indigo-700', 'hover:bg-red-700');
+                statusText.innerText = "Escuchando... Toque una cuerda";
+                statusText.className = "text-xs font-semibold uppercase tracking-wider text-emerald-600 mt-2 animate-pulse";
+
+                updatePitch();
+            } catch (err) {
+                statusText.innerText = "Error: No se pudo acceder al micrófono";
+                statusText.className = "text-xs font-semibold uppercase tracking-wider text-red-500 mt-2";
+                console.error("Error al acceder al micrófono:", err);
+            }
+        }
+
+        function stopMicrophone() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            isListening = false;
+            micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i> Activar Micrófono';
+            micBtn.classList.replace('bg-red-600', 'bg-indigo-600');
+            micBtn.classList.replace('hover:bg-red-700', 'hover:bg-indigo-700');
+            statusText.innerText = "Micrófono inactivo";
+            statusText.className = "text-xs font-semibold uppercase tracking-wider text-gray-400 mt-2";
+            
+            // Resetear UI
+            needle.style.transform = `rotate(0deg)`;
+            noteDisplay.innerText = "--";
+            noteDisplay.className = "text-5xl font-extrabold text-slate-800 tracking-wider font-mono";
+            freqDisplay.innerText = "0.00 Hz";
+        }
+
+        // Algoritmo de Auto-correlación para calcular la frecuencia fundamental
+        function autoCorrelate(buf, sampleRate) {
+            let SIZE = buf.length;
+            let rms = 0;
+
+            for (let i = 0; i < SIZE; i++) {
+                let val = buf[i];
+                rms += val * val;
+            }
+            rms = Math.sqrt(rms / SIZE);
+
+            // Umbral de volumen mínimo (silencio)
+            if (rms < 0.01) return -1;
+
+            let r1 = 0, r2 = SIZE - 1, thres = 0.2;
+            for (let i = 0; i < SIZE / 2; i++) {
+                if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+            }
+            for (let i = 1; i < SIZE / 2; i++) {
+                if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
+            }
+
+            buf = buf.slice(r1, r2);
+            SIZE = buf.length;
+
+            let c = new Array(SIZE).fill(0);
+            for (let i = 0; i < SIZE; i++) {
+                for (let j = 0; j < SIZE - i; j++) {
+                    c[i] = c[i] + buf[j] * buf[j + i];
+                }
+            }
+
+            let d = 0;
+            while (c[d] > c[d + 1]) d++;
+            let maxval = -1, maxpos = -1;
+            for (let i = d; i < SIZE; i++) {
+                if (c[i] > maxval) {
+                    maxval = c[i];
+                    maxpos = i;
+                }
+            }
+            let T0 = maxpos;
+
+            return sampleRate / T0;
+        }
+
+        function noteFromPitch(frequency) {
+            const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
+            return Math.round(noteNum) + 69;
+        }
+
+        function frequencyFromNoteNumber(note) {
+            return 440 * Math.pow(2, (note - 69) / 12);
+        }
+
+        function getCents(frequency, note) {
+            return Math.floor(1200 * Math.log(frequency / frequencyFromNoteNumber(note)) / Math.log(2));
+        }
+
+        function updatePitch() {
+            if (!isListening) return;
+
+            const buf = new Float32Array(2048);
+            analyser.getFloatTimeDomainData(buf);
+            const pitch = autoCorrelate(buf, audioCtx.sampleRate);
+
+            if (pitch !== -1 && pitch >= 60 && pitch <= 500) { // Rango razonable de guitarra
+                const noteNum = noteFromPitch(pitch);
+                const noteName = NOTE_STRINGS[noteNum % 12];
+                const cents = getCents(pitch, noteNum);
+
+                freqDisplay.innerText = `${pitch.toFixed(2)} Hz`;
+                noteDisplay.innerText = noteName;
+
+                // Mover aguja (rango de -50 a +50 centésimas mapeado a -60deg a +60deg)
+                const clampedCents = Math.max(-50, Math.min(50, cents));
+                const angle = (clampedCents / 50) * 60;
+                needle.style.transform = `rotate(${angle}deg)`;
+
+                // Indicador de estado por color
+                if (Math.abs(cents) <= 5) {
+                    noteDisplay.className = "text-5xl font-extrabold text-emerald-600 tracking-wider font-mono";
+                    statusText.innerText = "¡AFINADO!";
+                    statusText.className = "text-xs font-bold uppercase tracking-wider text-emerald-600 mt-2";
+                } else if (cents < 0) {
+                    noteDisplay.className = "text-5xl font-extrabold text-amber-600 tracking-wider font-mono";
+                    statusText.innerText = "Demasiado grave (apretar)";
+                    statusText.className = "text-xs font-semibold uppercase tracking-wider text-amber-600 mt-2";
+                } else {
+                    noteDisplay.className = "text-5xl font-extrabold text-amber-600 tracking-wider font-mono";
+                    statusText.innerText = "Demasiado agudo (aflojar)";
+                    statusText.className = "text-xs font-semibold uppercase tracking-wider text-amber-600 mt-2";
+                }
+            }
+
+            animationId = requestAnimationFrame(updatePitch);
+        }
+
+        // Inicializar al cargar la página
+        window.onload = () => {
+            renderFretboard();
+        };
+    </script>
+</body>
+</html>        
